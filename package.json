@@ -1,0 +1,58 @@
+{
+  "name": "revitalize-object",
+  "version": "0.0.0",
+  "description": "Serialize and restore \"dead\" JSON objects back to instances with proper prototypes providing behavior",
+  "license": "BSD-2-Clause",
+  "author": "Shane Holloway <shane.holloway@ieee.org>",
+  "homepage": "https://github.com/shanewholloway/js-revitalize-object#readme",
+  "bugs": {
+    "url": "https://github.com/shanewholloway/js-revitalize-object/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/shanewholloway/js-revitalize-object.git"
+  },
+  "keywords": [
+    "pickle",
+    "serialize",
+    "restore"
+  ],
+  "files": [
+    "dist/",
+    "code/",
+    "test/"
+  ],
+  "main": "dist/index.js",
+  "browser": "dist/index.min.js",
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-preset-jsy": "^0.7.2",
+    "babili": "^0.1.1",
+    "tap-lite-tester": "^0.5.1"
+  },
+  "babel": {
+    "presets": [
+      [
+        "jsy",
+        {
+          "targets": {
+            "node": "7.1",
+            "browsers": "> 5%"
+          }
+        }
+      ]
+    ]
+  },
+  "scripts": {
+    "start": "node dist",
+    "build": "npm -s run build:code && npm -s run build:min",
+    "build:code": "babel -s true -x .js,.jsy code -d dist",
+    "build:min": "babili --no-babelrc -s true dist/index.js -o dist/index.min.js",
+    "watch": "npm -s run build:code -- --watch",
+    "prepublish": "npm -s run test",
+    "pretest": "npm -s run build",
+    "test": "babel-node ./test/test.jsy",
+    "shellenv": "export PATH=$PWD/node_modules/.bin:$PATH; cd examples; echo 'Run babel-node ./demo-{{some-demo-name}}.jsy'; $SHELL",
+    "example": "babel-node ./example/demo.jsy"
+  }
+}
