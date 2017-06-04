@@ -72,7 +72,6 @@ module.exports = exports = function(tap, options={}) ::
         abc: new Keen().update @: a: 1942, b: 2042, c: 2142
       , def: new Neato().update @: d:23, e:'eeee', f: 'awesome'
       , value: 'the answer to life the universe and everything'
-      , p0: some_proto
       , p1: Object.create @ some_proto
 
     root.xyz = root.def
@@ -84,12 +83,16 @@ module.exports = exports = function(tap, options={}) ::
     t.equal @ 'string', typeof ans
 
     applyJSONEqual @ t, ans, @{}
-      "abc": { "a": 1942, "b": 2042, "c": 2142, "Ξ": [ "someOther.scope.Keen", 0 ] },
-      "def": { "d": 23, "e": "eeee", "f": "awesome", "Ξ": [ "example.scope.Neato", 1 ] },
-      "value": "the answer to life the universe and everything",
-      "p0": { "Ξ": [ "some.proto.by.name", 2 ] },
-      "p1": { "Ξ": [ "some.proto.by.name", 3 ] },
-      "xyz": { "Ξ": 1 },
+        refs: @[]
+            { Ξ: [ 'someOther.scope.Keen', 0 ], a: 1942, b: 2042, c: 2142 }
+          , { Ξ: [ 'example.scope.Neato', 1 ], d: 23, e: 'eeee', f: 'awesome' }
+          , { Ξ: [ 'some.proto.by.name', 2 ] }
+      , root: @{}
+            abc: { Ξ: 0 }
+          , def: { Ξ: 1 }
+          , value: 'the answer to life the universe and everything'
+          , p1: { Ξ: 2 }
+          , xyz: { Ξ: 1 }
 
     const res = revitalizeObjects.decode(ans)
     applyTest(res)
@@ -100,7 +103,6 @@ module.exports = exports = function(tap, options={}) ::
       t.deepEqual @ tip.abc.soundOff(), ['Keen', tip.abc]
       t.deepEqual @ tip.def.soundOff(), ['Neato', tip.def]
       t.deepEqual @ tip.xyz.soundOff(), ['Neato', tip.def]
-      t.deepEqual @ tip.p0.soundOff(), ['some proto', tip.p0]
       t.deepEqual @ tip.p1.soundOff(), ['some proto', tip.p1]
 
       t.deepEqual @ tip.abc, {"a":1942,"b":2042,"c":2142}
@@ -155,11 +157,16 @@ module.exports = exports = function(tap, options={}) ::
     t.equal @ 'string', typeof ans
 
     applyJSONEqual @ t, ans, @{}
-      "abc": { "a": 1942, "b": 2042, "c": 2142, "ξ": [ "alt.scope.Keen", 0 ] },
-      "def": { "d": 23, "e": "eeee", "f": "awesome", "ξ": [ "alt.scope.Neato", 1 ] },
-      "value": "the answer to life the universe and everything",
-      "p1": { "ξ": [ "some.proto.by.alt", 2 ] },
-      "xyz": { "ξ": 1 },
+       refs: @[]
+          { ξ: [ 'alt.scope.Keen', 0 ], a: 1942, b: 2042, c: 2142 }
+        , { ξ: [ 'alt.scope.Neato', 1 ], d: 23, e: 'eeee', f: 'awesome' }
+        , { ξ: [ 'some.proto.by.alt', 2 ] }
+     , root: @{}
+          abc: { ξ: 0 }
+        , def: { ξ: 1 }
+        , value: 'the answer to life the universe and everything'
+        , p1: { ξ: 2 }
+        , xyz: { ξ: 1 }
 
 
     const res = revitalizeObjects.decode(ans)
@@ -179,6 +186,15 @@ module.exports = exports = function(tap, options={}) ::
       t.strictEqual @ tip.def, tip.xyz
 
 
+  tap.test @ 'Revive without registered function throws exception', t => ::
+    const revitalizeObjects = testModule.createRegistry()
+    t.throws @ () => ::
+      revitalizeObjects.decode @
+        JSON.stringify @: 
+            refs: @[]
+              @{} Ξ: ['this-reviver-not-registered', 99], a: 1942
+          , root: { Ξ: 99 }
+
   tap.test @ 'Circular test', t => ::
     const revitalizeObjects = testModule.createRegistry()
 
@@ -195,28 +211,45 @@ module.exports = exports = function(tap, options={}) ::
     b.next = c
     c.next = a
 
-    const first_expected = @{}
-      next: @{}
-          next: @{}
-              next: { 'Ξ': 0 }
-            , 'Ξ': [ 'basics.circular.node', 2 ]
-        , 'Ξ': [ 'basics.circular.node', 1 ]
-      , 'Ξ': [ 'basics.circular.node', 0 ]
+    function applyTestTriangle(...args) ::
+      for const node of args ::
+        t.strictEqual @ node.next.next.next, node
 
-    const ans_tip = revitalizeObjects.encode(a)
-    applyJSONEqual @ t, ans_tip, first_expected
 
-    const ans_lst = revitalizeObjects.encode([a, b, c])
-    applyJSONEqual @ t, ans_lst, @[]
-        first_expected
-      , { 'Ξ': 1 }
-      , { 'Ξ': 2 }
+    applyTestTriangle(a, b, c)
 
-    const ans_obj = revitalizeObjects.encode({a, b, c})
-    applyJSONEqual @ t, ans_obj, @{}
-        "a": first_expected
-      , "b": { 'Ξ': 1 }
-      , "c": { 'Ξ': 2 }
+    const refs = @[]
+        @{} 'Ξ': [ 'basics.circular.node', 0 ], next: { 'Ξ': 1 }
+      , @{} 'Ξ': [ 'basics.circular.node', 1 ], next: { 'Ξ': 2 }
+      , @{} 'Ξ': [ 'basics.circular.node', 2 ], next: { 'Ξ': 0 }
+
+
+    ::
+      const ans_tip = revitalizeObjects.encode(a)
+      applyJSONEqual @ t, ans_tip, @{}
+        refs, root: { Ξ: 0 }
+
+      const res = revitalizeObjects.decode(ans_tip)
+      applyTestTriangle(res)
+
+    ::
+      const ans_lst = revitalizeObjects.encode([a, b, c])
+      applyJSONEqual @ t, ans_lst, @{}
+        refs, root: @[] { Ξ: 0 }, { Ξ: 1 }, { Ξ: 2 }
+
+      const res = revitalizeObjects.decode(ans_lst)
+      applyTestTriangle(res[0], res[1], res[2])
+
+    ::
+      const ans_obj = revitalizeObjects.encode({a, b, c})
+      applyJSONEqual @ t, ans_obj, @{}
+        refs, root: @{}
+              "a": { 'Ξ': 0 }
+            , "b": { 'Ξ': 1 }
+            , "c": { 'Ξ': 2 }
+
+      const res = revitalizeObjects.decode(ans_obj)
+      applyTestTriangle(res.a, res.b, res.c)
 
 
 function applyJSONEqual(t, szActualJSON, expected) ::

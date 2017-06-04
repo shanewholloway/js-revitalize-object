@@ -1,8 +1,14 @@
 const ObjMap = 'undefined' !== typeof WeakMap ? WeakMap : Map
 
+class ReviverNotFound extends Error ::
+
+const base_api = @{}
+
+
 module.exports = exports = createRevitalizationRegistry()
 Object.assign @ exports, @{}
-  createRevitalizationRegistry, createRegistry: createRevitalizationRegistry
+    createRevitalizationRegistry, createRegistry: createRevitalizationRegistry
+  , ReviverNotFound
 
 function createRevitalizationRegistry(token_p) ::
   const token=token_p || '\u039E' // 'Ξ' 
@@ -19,7 +25,6 @@ function createRevitalizationRegistry(token_p) ::
 
     , parse, decode: parse
     , stringify, encode: stringify
-
     , lookupReviver, lookupPreserver, findPreserver
 
   return api
@@ -48,13 +53,13 @@ function createRevitalizationRegistry(token_p) ::
     throw new TypeError(`Unrecognized revitalization registration`)
 
   function registerClass(kind, klass) ::
-    return registerKind
-      @ kind, (objBody) => Object.setPrototypeOf(objBody, klass.prototype)
+    return this.registerKind
+      @ kind, (obj, args) => Object.setPrototypeOf @ Object.assign(obj, args.body), klass.prototype
       .match(klass, klass.prototype)
 
   function registerProto(kind, proto) ::
-    return registerKind
-      @ kind, (objBody) => Object.setPrototypeOf(objBody, proto)
+    return this.registerKind
+      @ kind, (obj, args) => Object.setPrototypeOf @ Object.assign(obj, args.body), proto
       .match(proto)
 
   function registerKind(kind, revive, preserve) ::
@@ -62,7 +67,7 @@ function createRevitalizationRegistry(token_p) ::
       throw new TypeError @ '"revive" must be a function'
 
     if null == preserve ::
-      preserve = default_preserve
+      preserve = noop
     else if 'function' !== typeof preserve ::
       throw new TypeError @ '"preserve" must be a function'
 
@@ -80,11 +85,6 @@ function createRevitalizationRegistry(token_p) ::
             if null != each ::
               lutPreserve.set(each, entry)
           return this
-
-  function default_preserve(obj) ::
-    if obj.toJSON ::
-      return obj.toJSON()
-    return Object.assign({}, obj)
 
   function findPreserver(obj) ::
     let entry = lookupPreserver(obj)
@@ -104,30 +104,40 @@ function createRevitalizationRegistry(token_p) ::
 
 
 function parse(aString, ctx) ::
+  if null == ctx :: ctx = {}
   const token=this.token, lookupReviver=this.lookupReviver
 
   const queue=[], oidRefs=new Map(), refs=new ObjMap()
-  const root = JSON.parse(aString, _json_reviver)
+  const {root} = JSON.parse(aString, _json_reviver)
 
-  for const args of _lookupReviveForObjects(queue) ::
-    args.revive(args.obj, args, ctx)
+  while 0 !== queue.length ::
+    const args = queue.shift()
+    const revive = lookupReviver(args.kind) || ctx.reviveMissing
+    if undefined === revive ::
+      throw ReviverNotFound(`Missing registered revive functions for kind "${args.kind}"`)
+
+    revive(args.obj, args, ctx)
 
   return root
 
+  function _objForOid(oid) ::
+    let obj = oidRefs.get(oid)
+    if undefined === obj ::
+      obj = Object.create(null)
+      oidRefs.set(oid, obj)
+    return obj
+
   function _json_reviver(key, value) ::
     if token === key ::
+      delete this[token]
+
       if 'number' === typeof value ::
-        const oid = value
-        const obj = oidRefs.get(oid)
-        if undefined === obj ::
-          throw new Error(`Referenced object id "${oid}" not found`)
-        else :: refs.set(this, obj)
+        refs.set @ this, _objForOid(value)
 
-      else ::
+      else if Array.isArray(value) ::
         const [kind, oid] = value
-        oidRefs.set(oid, this)
-        queue.push @: kind, oid, obj: this
-
+        queue.push @: kind, oid
+          , body: this, obj: _objForOid(oid)
       return
 
     else if null === value || 'object' !== typeof value ::
@@ -136,33 +146,32 @@ function parse(aString, ctx) ::
     const ans = refs.get(value)
     return ans !== undefined ? ans : value
 
-  function _lookupReviveForObjects(queue) ::
-    let missing
-    for const args of queue ::
-      const revive = lookupReviver(args.kind)
-      if undefined === revive ::
-        missing = [].concat(missing || [], [args.kind])
-      else :: args.revive = revive
-    
-    if undefined !== missing ::
-      const err = TypeError(`Missing registered revive functions for kinds: ${JSON.stringify(missing)}`)
-      err.missing = missing
-      throw err
 
-    return queue
-
-
-function stringify(anObject, space) ::
+function stringify(anObject) ::
   const token=this.token, findPreserver=this.findPreserver
 
-  const refs = new Map()
-  return JSON.stringify(anObject, _json_replacer, space)
+  const queue=[], lookup=new Map()
+  const root = JSON.stringify(anObject, _json_replacer)
+
+  ::
+    const flat = []
+    while 0 !== queue.length ::
+      const {oid, body} = queue.shift()
+      flat[oid] = JSON.stringify(body, _json_replacer)
+
+    const result =
+      @[] `{"refs": [\n  `
+        , flat.join(',\n  ')
+        , ` ],\n`
+        , ` "root": ${root} }\n`
+
+    return result.join('')
 
   function _json_replacer(key, value) ::
     if value === null || 'object' !== typeof value ::
       return value
 
-    const prev = refs.get(value)
+    const prev = lookup.get(value)
     if undefined !== prev ::
       return prev // already serialized -- reference existing item
 
@@ -170,15 +179,19 @@ function stringify(anObject, space) ::
     if undefined === entry ::
       return value // not a "special" preserved item; serialize normally
 
+    // register id for object and return a JSON serializable version
+    const oid = lookup.size
+    const ref = {[token]: oid}
+    lookup.set(value, ref)
 
     // transform live object into preserved form
-    let body = entry.preserve(value)
-    if body === value ::
-      body = Object.assign({}, body)
+    const body = Object.assign @
+        {[token]: [entry.kind, oid]}
+      , entry.preserve(value)
 
-    // register id for object and return a JSON serializable version
-    const oid = refs.size
-    body[token] = [entry.kind, oid]
-    refs.set @ value, {[token]: oid}
-    return body
+    queue.push @: oid, body
+    return ref
+
+
+function noop(obj) :: return obj
 
