@@ -1,6 +1,6 @@
 {
   "name": "revitalize-object",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Serialize and restore \"dead\" JSON objects back to instances with proper prototypes providing behavior",
   "license": "BSD-2-Clause",
   "author": "Shane Holloway <shane.holloway@ieee.org>",
@@ -50,9 +50,9 @@
     "build:min": "babili --no-babelrc -s true dist/index.js -o dist/index.min.js",
     "watch": "npm -s run build:code -- --watch",
     "prepublish": "npm -s run test",
-    "pretest": "npm -s run build",
-    "test": "babel-node ./test/test.jsy",
-    "shellenv": "export PATH=$PWD/node_modules/.bin:$PATH; cd examples; echo 'Run babel-node ./demo-{{some-demo-name}}.jsy'; $SHELL",
-    "example": "babel-node ./example/demo.jsy"
+    "--pretest": "npm -s run build",
+    "test": "babel-node ./test/test.js",
+    "shellenv": "export PATH=$PWD/node_modules/.bin:$PATH; cd examples; echo 'Run babel-node ./demo-{{some-demo-name}}.js'; $SHELL",
+    "example": "babel-node ./example/demo.js"
   }
 }
