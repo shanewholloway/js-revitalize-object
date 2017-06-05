@@ -120,10 +120,13 @@ class Revitalization extends Function ::
     const refs=new ObjMap()
     JSON.parse(aString, _json_restore)
 
-    return Promise
-      .all @ queue.map @ args => ::
-        args.reviver.revive(args.obj, args, ctx)
+    const done = Promise.resolve()
+      .then @ () =>
+        Promise.all @ queue.map @ args => ::
+          args.done = done
+          return args.reviver.revive(args.obj, args, ctx)
       .then @ () => byOid.get(0).obj
+    return done
 
 
     function _json_create(key, value) ::
@@ -180,7 +183,9 @@ class Revitalization extends Function ::
 
   encodeObjects(anObject, ctx, callback) ::
     if 'function' === typeof ctx ::
-      callback = ctx; ctx = undefined
+      callback = ctx; ctx = {}
+    else if null == ctx ::
+      ctx = {}
 
     const token=this.token, lookupPreserver=this.lookupPreserver, findPreserver=this._boundFindPreserveForObj()
 
