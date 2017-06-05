@@ -46,7 +46,7 @@
   "scripts": {
     "start": "node dist",
     "build": "npm -s run build:code && npm -s run build:min",
-    "build:code": "babel -s true -x .js,.jsy code -d dist",
+    "build:code": "babel -s inline -x .js,.jsy code -d dist",
     "build:min": "babili --no-babelrc -s true dist/index.js -o dist/index.min.js",
     "watch": "npm -s run build:code -- --watch",
     "prepublish": "npm -s run test",

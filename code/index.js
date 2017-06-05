@@ -2,9 +2,6 @@ const ObjMap = 'undefined' !== typeof WeakMap ? WeakMap : Map
 
 class ReviverNotFound extends Error ::
 
-const base_api = @{}
-
-
 module.exports = exports = createRevitalizationRegistry()
 Object.assign @ exports, @{}
     createRevitalizationRegistry, createRegistry: createRevitalizationRegistry
@@ -12,26 +9,31 @@ Object.assign @ exports, @{}
 
 function createRevitalizationRegistry(token_p) ::
   const token=token_p || '\u039E' // 'Ξ' 
-  const lutRevive=new Map(), lookupReviver = lutRevive.get.bind(lutRevive)
+  const lutRevive=new Map(), lookupReviver=lutRevive.get.bind(lutRevive)
 
   const lutPreserve=new ObjMap(), lookupPreserver=lutPreserve.get.bind(lutPreserve)
 
   const api = Object.assign @ register, ::
       token
     , register
-    , registerKind
+    , registerReviver
     , registerProto
     , registerClass
 
-    , parse, decode: parse
-    , stringify, encode: stringify
+    , decode, encode, encodeObjects
     , lookupReviver, lookupPreserver, findPreserver
 
+  api.registerReviver @: kind: null,
+    revive(obj, args) :: return Object.assign(obj, args.body)
+  api.registerReviver @: kind: false,
+    revive(obj, args) :: return Object.assign(obj, args.body)
   return api
 
   function register(revitalizer) ::
-    let tgt
+    if revitalizer.kind && revitalizer.revive ::
+      return api.registerReviver(revitalizer)
 
+    let tgt
     if undefined !== revitalizer.prototype ::
       tgt = revitalizer.prototype[token]
       if undefined !== tgt ::
@@ -53,32 +55,43 @@ function createRevitalizationRegistry(token_p) ::
     throw new TypeError(`Unrecognized revitalization registration`)
 
   function registerClass(kind, klass) ::
-    return this.registerKind
-      @ kind, (obj, args) => Object.setPrototypeOf @ Object.assign(obj, args.body), klass.prototype
+    return this
+      .registerReviver @: kind,
+        revive(obj, args) ::
+          obj = Object.assign(obj, args.body)
+          return Object.setPrototypeOf(obj, klass.prototype)
       .match(klass, klass.prototype)
 
   function registerProto(kind, proto) ::
-    return this.registerKind
-      @ kind, (obj, args) => Object.setPrototypeOf @ Object.assign(obj, args.body), proto
+    return this
+      .registerReviver @: kind,
+        revive(obj, args) ::
+          obj = Object.assign(obj, args.body)
+          return Object.setPrototypeOf(obj, proto)
       .match(proto)
 
-  function registerKind(kind, revive, preserve) ::
-    if 'function' !== typeof revive ::
-      throw new TypeError @ '"revive" must be a function'
+  function registerReviver(entry) ::
+    ::
+      const kind = entry.kind
+      if 'string' !== typeof kind && true !== kind && false !== kind && null !== kind ::
+        throw new TypeError @ `"kind" must be a string`
 
-    if null == preserve ::
-      preserve = noop
-    else if 'function' !== typeof preserve ::
-      throw new TypeError @ '"preserve" must be a function'
+      if entry.create && 'function' !== typeof entry.create ::
+        throw new TypeError @ '"create" must be a function'
 
-    const entry = @{} kind, revive, preserve
+      if 'function' !== typeof entry.revive ::
+        throw new TypeError @ '"revive" must be a function'
 
-    lutRevive.set(kind, revive)
+      if entry.preserve && 'function' !== typeof entry.preserve ::
+        throw new TypeError @ '"preserve" must be a function if provided'
+
+      lutRevive.set(kind, entry)
+
     return ::
         alias(...kinds) ::
           for const each of kinds ::
             if each ::
-              lutRevive.set(each, revive)
+              lutRevive.set(each, entry)
           return this
       , match(...objects) ::
           for const each of objects ::
@@ -103,41 +116,54 @@ function createRevitalizationRegistry(token_p) ::
 
 
 
-function parse(aString, ctx) ::
+function decode(aString, ctx) ::
   if null == ctx :: ctx = {}
   const token=this.token, lookupReviver=this.lookupReviver
 
-  const queue=[], oidRefs=new Map(), refs=new ObjMap()
-  const {root} = JSON.parse(aString, _json_reviver)
+  const queue=[], byOid=new Map()
+  JSON.parse(aString, _json_create)
 
-  while 0 !== queue.length ::
-    const args = queue.shift()
-    const revive = lookupReviver(args.kind) || ctx.reviveMissing
-    if undefined === revive ::
-      throw ReviverNotFound(`Missing registered revive functions for kind "${args.kind}"`)
+  const refs=new ObjMap()
+  JSON.parse(aString, _json_restore)
 
-    revive(args.obj, args, ctx)
+  return Promise
+    .all @ queue.map @ args => ::
+      args.reviver.revive(args.obj, args, ctx)
+    .then @ () => byOid.get(0).obj
 
-  return root
 
-  function _objForOid(oid) ::
-    let obj = oidRefs.get(oid)
-    if undefined === obj ::
-      obj = Object.create(null)
-      oidRefs.set(oid, obj)
-    return obj
-
-  function _json_reviver(key, value) ::
+  function _json_create(key, value) ::
     if token === key ::
-      delete this[token]
-
       if 'number' === typeof value ::
-        refs.set @ this, _objForOid(value)
+      else if Array.isArray(value) ::
+        delete this[token]
+
+        const [kind, oid] = value
+        const reviver = lookupReviver(kind)
+        if undefined === reviver ::
+          throw new ReviverNotFound(`Missing registered reviver for kind "${kind}"`)
+
+        const obj = reviver.create
+          ? reviver.create()
+          : Object.create(null)
+
+        const entry = @: kind, oid, reviver, obj
+        byOid.set(oid, entry)
+        queue.push(entry)
+      return
+
+    return value
+
+
+  function _json_restore(key, value) ::
+    if token === key ::
+      if 'number' === typeof value ::
+        refs.set @ this, byOid.get(value).obj
 
       else if Array.isArray(value) ::
-        const [kind, oid] = value
-        queue.push @: kind, oid
-          , body: this, obj: _objForOid(oid)
+        const entry = byOid.get(value[1])
+        entry.body = this
+        refs.set @ this, entry.obj
       return
 
     else if null === value || 'object' !== typeof value ::
@@ -147,25 +173,38 @@ function parse(aString, ctx) ::
     return ans !== undefined ? ans : value
 
 
-function stringify(anObject) ::
+function encode(anObject) ::
+  const refs = []
+  const promise = encodeObjects.call @ this, anObject, (err, entry) => ::
+    refs[entry.oid] = entry.content
+
+  const key = JSON.stringify @ `${this.token}refs`
+  return promise.then @ () =>
+    `{${key}: [\n  ${refs.join(',\n  ')} ]}\n`
+
+
+function encodeObjects(anObject, callback) ::
   const token=this.token, findPreserver=this.findPreserver
 
   const queue=[], lookup=new Map()
-  const root = JSON.stringify(anObject, _json_replacer)
+  JSON.stringify(anObject, _json_replacer)
 
-  ::
-    const flat = []
+  return encodeQueue()
+
+  function encodeQueue() ::
+    if 0 === queue.length :: return
+
+    const promises = []
     while 0 !== queue.length ::
-      const {oid, body} = queue.shift()
-      flat[oid] = JSON.stringify(body, _json_replacer)
+      const tip = queue.shift(), oid = tip.oid
+      promises.push @
+        tip
+          .then @ body => ::
+            const content = JSON.stringify(body, _json_replacer)
+            return callback @ null, { oid, body, content }
+          .catch @ err => callback(err)
 
-    const result =
-      @[] `{"refs": [\n  `
-        , flat.join(',\n  ')
-        , ` ],\n`
-        , ` "root": ${root} }\n`
-
-    return result.join('')
+    return Promise.all(promises).then(encodeQueue)
 
   function _json_replacer(key, value) ::
     if value === null || 'object' !== typeof value ::
@@ -175,9 +214,15 @@ function stringify(anObject) ::
     if undefined !== prev ::
       return prev // already serialized -- reference existing item
 
-    const entry = findPreserver(value)
+    let entry = findPreserver(value)
     if undefined === entry ::
-      return value // not a "special" preserved item; serialize normally
+      // not a "special" preserved item
+      if anObject !== value ::
+        return value // so serialize normally
+      else if Array.isArray(value) ::
+        entry = {kind: false} // but since it is the root item array, store it anyway
+      else ::
+        entry = {kind: null} // but since it is the root item, store it anyway
 
     // register id for object and return a JSON serializable version
     const oid = lookup.size
@@ -185,13 +230,12 @@ function stringify(anObject) ::
     lookup.set(value, ref)
 
     // transform live object into preserved form
-    const body = Object.assign @
-        {[token]: [entry.kind, oid]}
-      , entry.preserve(value)
+    const body = {[token]: [entry.kind, oid]}
+    const promise = Promise
+      .resolve @ entry.preserve ? entry.preserve(value) : value
+      .then @ attrs => Object.assign(body, attrs)
 
-    queue.push @: oid, body
+    promise.oid = oid
+    queue.push @ promise
     return ref
-
-
-function noop(obj) :: return obj
 

@@ -1,48 +1,35 @@
+require('source-map-support').install()
 const testModule = require('../dist')
 
 module.exports = exports = function(tap, options={}) ::
 
-  tap.test @ 'Module function smoke test', t => ::
+  tap.test @ 'Module function smoke test', async t => ::
     const revitalizeObjects = testModule
     const src = @{}
       a: 1942, b: {c: 'value', d: [1, 1, 2, 3, 5, 8, 13]}, e: null
 
     t.equal(revitalizeObjects.token, 'Ξ')
-    ::
-      const sz = revitalizeObjects.stringify(src)
-      t.equal(typeof sz, 'string')
-      const ans = revitalizeObjects.parse(sz)
-      t.deepEqual(ans, src)
-
-    ::
-      const sz = revitalizeObjects.encode(src)
-      t.equal(typeof sz, 'string')
-      const ans = revitalizeObjects.decode(sz)
-      t.deepEqual(ans, src)
+    const sz = await revitalizeObjects.encode(src)
+    t.equal(typeof sz, 'string')
+    const ans = await revitalizeObjects.decode(sz)
+    t.deepEqual(ans, src)
 
 
-  tap.test @ 'Instance smoke test', t => ::
+  tap.test @ 'Instance smoke test', async t => ::
     const instance = testModule.createRegistry('Φ')
 
     const src = @{}
       a: 1942, b: {c: 'value', d: [1, 1, 2, 3, 5, 8, 13]}, e: null
 
     t.equal(instance.token, 'Φ')
-    ::
-      const sz = instance.stringify(src)
-      t.equal(typeof sz, 'string')
-      const ans = instance.parse(sz)
-      t.deepEqual(ans, src)
-
-    ::
-      const sz = instance.encode(src)
-      t.equal(typeof sz, 'string')
-      const ans = instance.decode(sz)
-      t.deepEqual(ans, src)
+    const sz = await instance.encode(src)
+    t.equal(typeof sz, 'string')
+    const ans = await instance.decode(sz)
+    t.deepEqual(ans, src)
 
 
 
-  tap.test @ 'Object behavior test ', t => ::
+  tap.test @ 'Object behavior test ', async t => ::
     const revitalizeObjects = testModule.createRegistry()
 
     class Neato ::
@@ -78,23 +65,23 @@ module.exports = exports = function(tap, options={}) ::
 
     applyTest(root)
 
-    const ans = revitalizeObjects.encode(root, '  ')
+    const ans = await revitalizeObjects.encode(root, '  ')
 
     t.equal @ 'string', typeof ans
 
     applyJSONEqual @ t, ans, @{}
-        refs: @[]
-            { Ξ: [ 'someOther.scope.Keen', 0 ], a: 1942, b: 2042, c: 2142 }
-          , { Ξ: [ 'example.scope.Neato', 1 ], d: 23, e: 'eeee', f: 'awesome' }
-          , { Ξ: [ 'some.proto.by.name', 2 ] }
-      , root: @{}
-            abc: { Ξ: 0 }
-          , def: { Ξ: 1 }
-          , value: 'the answer to life the universe and everything'
-          , p1: { Ξ: 2 }
-          , xyz: { Ξ: 1 }
+        Ξrefs: @[]
+            @{} Ξ: [ null, 0 ]
+              , abc: { Ξ: 1 }
+              , def: { Ξ: 2 }
+              , value: 'the answer to life the universe and everything'
+              , p1: { Ξ: 3 }
+              , xyz: { Ξ: 2 }
+          , { Ξ: [ 'someOther.scope.Keen', 1 ], a: 1942, b: 2042, c: 2142 }
+          , { Ξ: [ 'example.scope.Neato', 2 ], d: 23, e: 'eeee', f: 'awesome' }
+          , { Ξ: [ 'some.proto.by.name', 3 ] }
 
-    const res = revitalizeObjects.decode(ans)
+    const res = await revitalizeObjects.decode(ans)
     applyTest(res)
 
 
@@ -112,7 +99,7 @@ module.exports = exports = function(tap, options={}) ::
       t.notStrictEqual @ tip.p0, tip.p1
 
 
-  tap.test @ 'Alternate revitalize key test ', t => ::
+  tap.test @ 'Alternate revitalize key test ', async t => ::
     const revitalizeObjects = testModule.createRegistry('ξ')
 
     class Neato ::
@@ -152,24 +139,24 @@ module.exports = exports = function(tap, options={}) ::
 
     applyTest(root)
 
-    const ans = revitalizeObjects.encode(root, '  ')
+    const ans = await revitalizeObjects.encode(root, '  ')
 
     t.equal @ 'string', typeof ans
 
     applyJSONEqual @ t, ans, @{}
-       refs: @[]
-          { ξ: [ 'alt.scope.Keen', 0 ], a: 1942, b: 2042, c: 2142 }
-        , { ξ: [ 'alt.scope.Neato', 1 ], d: 23, e: 'eeee', f: 'awesome' }
-        , { ξ: [ 'some.proto.by.alt', 2 ] }
-     , root: @{}
-          abc: { ξ: 0 }
-        , def: { ξ: 1 }
-        , value: 'the answer to life the universe and everything'
-        , p1: { ξ: 2 }
-        , xyz: { ξ: 1 }
+      ξrefs: @[]
+        @{} ξ: [null, 0]
+          , abc: { ξ: 1 }
+          , def: { ξ: 2 }
+          , value: 'the answer to life the universe and everything'
+          , p1: { ξ: 3 }
+          , xyz: { ξ: 2 }
+        , { ξ: [ 'alt.scope.Keen', 1 ], a: 1942, b: 2042, c: 2142 }
+        , { ξ: [ 'alt.scope.Neato', 2 ], d: 23, e: 'eeee', f: 'awesome' }
+        , { ξ: [ 'some.proto.by.alt', 3 ] }
 
 
-    const res = revitalizeObjects.decode(ans)
+    const res = await revitalizeObjects.decode(ans)
     applyTest(res)
 
 
@@ -186,16 +173,15 @@ module.exports = exports = function(tap, options={}) ::
       t.strictEqual @ tip.def, tip.xyz
 
 
-  tap.test @ 'Revive without registered function throws exception', t => ::
+  tap.test @ 'Revive without registered function throws exception', async t => ::
     const revitalizeObjects = testModule.createRegistry()
     t.throws @ () => ::
       revitalizeObjects.decode @
         JSON.stringify @: 
-            refs: @[]
+            Ξrefs: @[]
               @{} Ξ: ['this-reviver-not-registered', 99], a: 1942
-          , root: { Ξ: 99 }
 
-  tap.test @ 'Circular test', t => ::
+  tap.test @ 'Circular test', async t => ::
     const revitalizeObjects = testModule.createRegistry()
 
     class TriangleTrade ::
@@ -218,37 +204,35 @@ module.exports = exports = function(tap, options={}) ::
 
     applyTestTriangle(a, b, c)
 
-    const refs = @[]
-        @{} 'Ξ': [ 'basics.circular.node', 0 ], next: { 'Ξ': 1 }
-      , @{} 'Ξ': [ 'basics.circular.node', 1 ], next: { 'Ξ': 2 }
-      , @{} 'Ξ': [ 'basics.circular.node', 2 ], next: { 'Ξ': 0 }
-
-
     ::
-      const ans_tip = revitalizeObjects.encode(a)
-      applyJSONEqual @ t, ans_tip, @{}
-        refs, root: { Ξ: 0 }
+      const ans_tip = await revitalizeObjects.encode(a)
+      applyJSONEqual @ t, ans_tip, @{} Ξrefs: @[]
+            @{} 'Ξ': [ 'basics.circular.node', 0 ], next: { 'Ξ': 1 }
+          , @{} 'Ξ': [ 'basics.circular.node', 1 ], next: { 'Ξ': 2 }
+          , @{} 'Ξ': [ 'basics.circular.node', 2 ], next: { 'Ξ': 0 }
 
-      const res = revitalizeObjects.decode(ans_tip)
+      const res = await revitalizeObjects.decode(ans_tip)
       applyTestTriangle(res)
 
     ::
-      const ans_lst = revitalizeObjects.encode([a, b, c])
-      applyJSONEqual @ t, ans_lst, @{}
-        refs, root: @[] { Ξ: 0 }, { Ξ: 1 }, { Ξ: 2 }
+      const ans_lst = await revitalizeObjects.encode([a, b, c])
+      applyJSONEqual @ t, ans_lst, @{} Ξrefs: @[]
+            @{} 'Ξ': [ false, 0 ], '0': { 'Ξ': 1 }, '1': { 'Ξ': 2 }, '2': { 'Ξ': 3 }
+          , @{} 'Ξ': [ 'basics.circular.node', 1 ], next: { 'Ξ': 2 }
+          , @{} 'Ξ': [ 'basics.circular.node', 2 ], next: { 'Ξ': 3 }
+          , @{} 'Ξ': [ 'basics.circular.node', 3 ], next: { 'Ξ': 1 }
 
-      const res = revitalizeObjects.decode(ans_lst)
+      const res = await revitalizeObjects.decode(ans_lst)
       applyTestTriangle(res[0], res[1], res[2])
 
     ::
-      const ans_obj = revitalizeObjects.encode({a, b, c})
-      applyJSONEqual @ t, ans_obj, @{}
-        refs, root: @{}
-              "a": { 'Ξ': 0 }
-            , "b": { 'Ξ': 1 }
-            , "c": { 'Ξ': 2 }
-
-      const res = revitalizeObjects.decode(ans_obj)
+      const ans_obj = await revitalizeObjects.encode({a, b, c})
+      applyJSONEqual @ t, ans_obj, @{} Ξrefs: @[]
+            @{} 'Ξ': [ null, 0 ], a: { 'Ξ': 1 }, b: { 'Ξ': 2 }, c: { 'Ξ': 3 }
+          , @{} 'Ξ': [ 'basics.circular.node', 1 ], next: { 'Ξ': 2 }
+          , @{} 'Ξ': [ 'basics.circular.node', 2 ], next: { 'Ξ': 3 }
+          , @{} 'Ξ': [ 'basics.circular.node', 3 ], next: { 'Ξ': 1 }
+      const res = await revitalizeObjects.decode(ans_obj)
       applyTestTriangle(res.a, res.b, res.c)
 
 
@@ -259,4 +243,9 @@ function applyJSONEqual(t, szActualJSON, expected) ::
     console.dir @ {actual}, {colors: true, depth: null}
     console.dir @ {expected}, {colors: true, depth: null}
 
-  return t.deepEqual @ actual, expected
+  try ::
+    return t.deepEqual @ actual, expected
+  catch err ::
+    console.dir @ {actual}, {colors: true, depth: null}
+    console.dir @ {expected}, {colors: true, depth: null}
+    //throw err
