@@ -71,7 +71,7 @@ module.exports = exports = function(tap, options={}) ::
 
     applyJSONEqual @ t, ans, @{}
         Ξrefs: @[]
-            @{} Ξ: [ null, 0 ]
+            @{} Ξ: [ '{root}', 0 ]
               , abc: { Ξ: 1 }
               , def: { Ξ: 2 }
               , value: 'the answer to life the universe and everything'
@@ -145,7 +145,7 @@ module.exports = exports = function(tap, options={}) ::
 
     applyJSONEqual @ t, ans, @{}
       ξrefs: @[]
-        @{} ξ: [null, 0]
+        @{} ξ: ['{root}', 0]
           , abc: { ξ: 1 }
           , def: { ξ: 2 }
           , value: 'the answer to life the universe and everything'
@@ -217,7 +217,8 @@ module.exports = exports = function(tap, options={}) ::
     ::
       const ans_lst = await revitalizeObjects.encode([a, b, c])
       applyJSONEqual @ t, ans_lst, @{} Ξrefs: @[]
-            @{} 'Ξ': [ false, 0 ], '0': { 'Ξ': 1 }, '1': { 'Ξ': 2 }, '2': { 'Ξ': 3 }
+            @{} 'Ξ': [ '[root]', 0 ]
+              , '_': [ { 'Ξ': 1 }, { 'Ξ': 2 }, { 'Ξ': 3 } ]
           , @{} 'Ξ': [ 'basics.circular.node', 1 ], next: { 'Ξ': 2 }
           , @{} 'Ξ': [ 'basics.circular.node', 2 ], next: { 'Ξ': 3 }
           , @{} 'Ξ': [ 'basics.circular.node', 3 ], next: { 'Ξ': 1 }
@@ -228,7 +229,8 @@ module.exports = exports = function(tap, options={}) ::
     ::
       const ans_obj = await revitalizeObjects.encode({a, b, c})
       applyJSONEqual @ t, ans_obj, @{} Ξrefs: @[]
-            @{} 'Ξ': [ null, 0 ], a: { 'Ξ': 1 }, b: { 'Ξ': 2 }, c: { 'Ξ': 3 }
+            @{} 'Ξ': [ '{root}', 0 ]
+              , 'a': { 'Ξ': 1 }, 'b': { 'Ξ': 2 }, 'c': { 'Ξ': 3 }
           , @{} 'Ξ': [ 'basics.circular.node', 1 ], next: { 'Ξ': 2 }
           , @{} 'Ξ': [ 'basics.circular.node', 2 ], next: { 'Ξ': 3 }
           , @{} 'Ξ': [ 'basics.circular.node', 3 ], next: { 'Ξ': 1 }
