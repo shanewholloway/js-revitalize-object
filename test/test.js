@@ -9,6 +9,7 @@ require('./tap-test-smoke') @ tap
 require('./tap-test-basics') @ tap
 require('./tap-test-basics-alt') @ tap
 require('./tap-test-circular') @ tap
+require('./tap-test-extensions') @ tap
 
 tap.finish()
 

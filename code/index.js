@@ -204,7 +204,8 @@ class Revitalization extends Function ::
     return _encodeQueue()
 
     function _encodeQueue() ::
-      if 0 === queue.length :: return
+      if 0 === queue.length ::
+        return Promise.resolve()
 
       const promises = []
       while 0 !== queue.length ::
@@ -218,32 +219,35 @@ class Revitalization extends Function ::
 
       return Promise.all(promises).then(_encodeQueue)
 
-    function _json_replacer(key, value) ::
-      if value === null || 'object' !== typeof value ::
-        return value
+    function _json_replacer(key, dstValue) ::
+      // srcValue !== dstValue for objects with .toJSON() methods
+      const srcValue = this[key]
 
-      const prev = lookup.get(value)
+      if dstValue === null || 'object' !== typeof srcValue ::
+        return dstValue
+
+      const prev = lookup.get(srcValue)
       if undefined !== prev ::
         return prev // already serialized -- reference existing item
 
-      let entry = findPreserver(value)
+      let entry = findPreserver(srcValue)
       if undefined === entry ::
         // not a "special" preserved item
-        if anObject !== value ::
-          return value // so serialize normally
+        if anObject !== srcValue ::
+          return dstValue // so serialize normally
         // but it is the root, so store at oid 0
         entry = lookupPreserver @
-          Array.isArray(value) ? root_list : root_obj
+          Array.isArray(dstValue) ? root_list : root_obj
 
       // register id for object and return a JSON serializable version
       const oid = lookup.size
       const ref = {[token]: oid}
-      lookup.set(value, ref)
+      lookup.set(srcValue, ref)
 
       // transform live object into preserved form
       const body = {[token]: [entry.kind, oid]}
       const promise = Promise
-        .resolve @ entry.preserve ? entry.preserve(value, ctx) : value
+        .resolve @ entry.preserve ? entry.preserve(dstValue, srcValue, ctx) : dstValue
         .then @ attrs => Object.assign(body, attrs)
 
       promise.oid = oid

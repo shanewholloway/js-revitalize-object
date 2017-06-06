@@ -13,6 +13,23 @@ module.exports = exports = function(tap, options={}) ::
               @{} Ξ: ['this-reviver-not-registered', 99], a: 1942
 
 
+  tap.test @ 'Date with toJSON', async t => ::
+    const revitalizeObjects = testModule
+
+    const ts = new Date('2017-01-01')
+    const src = @{} ts
+
+    const sz = await revitalizeObjects.encode(src)
+    t.equal(typeof sz, 'string')
+
+    const ans = await revitalizeObjects.decode(sz)
+    t.equal @ ans.ts, ts.toISOString()
+
+    applyJSONEqual @ t, sz, @{} 'Ξrefs': @[]
+      @{} 'Ξ': [ '{root}', 0 ]
+        , ts: '2017-01-01T00:00:00.000Z'
+
+
   tap.test @ 'Object behavior test ', async t => ::
     const revitalizeObjects = testModule.createRegistry()
 
