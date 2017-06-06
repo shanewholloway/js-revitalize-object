@@ -40,7 +40,7 @@ class Revitalization extends Function ::
   initRegistery(root_obj, root_list) ::
     this
       .register @: kind: '{root}'
-        , revive(obj, entry) :: return Object.assign(obj, entry.body)
+        , revive(obj, entry) :: Object.assign(obj, entry.body)
       .match @ root_obj
 
     this
@@ -48,7 +48,7 @@ class Revitalization extends Function ::
         , preserve(rootList) :: return @{} _: rootList.slice()
         , init(entry) :: return []
         , revive(rootList, entry) ::
-            return rootList.push.apply(rootList, entry.body._)
+            rootList.push.apply(rootList, entry.body._)
       .match @ root_list
 
   register(revitalizer) ::
@@ -98,7 +98,7 @@ class Revitalization extends Function ::
       .registerReviver @: kind,
         revive(obj, entry) ::
           obj = Object.assign(obj, entry.body)
-          return Object.setPrototypeOf(obj, klass.prototype)
+          Object.setPrototypeOf(obj, klass.prototype)
       .match(klass, klass.prototype)
 
   registerProto(kind, proto) ::
@@ -106,7 +106,7 @@ class Revitalization extends Function ::
       .registerReviver @: kind,
         revive(obj, entry) ::
           obj = Object.assign(obj, entry.body)
-          return Object.setPrototypeOf(obj, proto)
+          Object.setPrototypeOf(obj, proto)
       .match(proto)
 
 
@@ -122,11 +122,18 @@ class Revitalization extends Function ::
 
     const done = Promise.resolve()
       .then @ () =>
-        Promise.all @ queue.map @ entry => ::
+        Promise.all @ queue.reverse().map @ entry => ::
           entry.done = done
-          entry.reviver.revive(entry.obj, entry, ctx)
+          const ans = entry.reviver.revive(entry.obj, entry, ctx)
+          if undefined !== ans && 0 === entry.oid ::
+            entry.promise = ans = Promise.resolve(ans)
+          return ans
 
-    return done.then @ () => byOid.get(0).obj
+    return done.then @ () => ::
+      const {obj, promise} = byOid.get(0)
+      return undefined === promise ? obj
+        : promise.then @ ans =>
+            ans !== undefined ? ans : obj
 
 
     function _json_create(key, value) ::
