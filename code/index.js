@@ -126,7 +126,7 @@ class Revitalization extends Function ::
           entry.done = done
           const ans = entry.reviver.revive(entry.obj, entry, ctx)
           if undefined !== ans && 0 === entry.oid ::
-            entry.promise = ans = Promise.resolve(ans)
+            return entry.promise = Promise.resolve(ans)
           return ans
 
     return done.then @ () => ::
