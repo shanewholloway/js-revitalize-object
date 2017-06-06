@@ -3,23 +3,14 @@ const testModule = require('../dist')
 const {applyJSONEqual} = require('./_utils')
 
 module.exports = exports = function(tap, options={}) ::
-
-  tap.test @ 'Revive without registered function throws exception', async t => ::
-    const revitalizeObjects = testModule.createRegistry()
-    t.throws @ () => ::
-      revitalizeObjects.decode @
-        JSON.stringify @: 
-            Ξrefs: @[]
-              @{} Ξ: ['this-reviver-not-registered', 99], a: 1942
-
-
-  tap.test @ 'Object behavior test ', async t => ::
-    const revitalizeObjects = testModule.createRegistry()
+  tap.test @ 'Alternate revitalize key test ', async t => ::
+    const revitalizeObjects = testModule.createRegistry('ξ')
 
     class Neato ::
       update(...args) :: return Object.assign @ this, ...args
       soundOff() :: return @[] 'Neato', this
       static Ξ = 'example.scope.Neato'
+      static ξ = 'alt.scope.Neato'
 
     revitalizeObjects @ Neato
 
@@ -28,6 +19,8 @@ module.exports = exports = function(tap, options={}) ::
       soundOff() :: return @[] 'Keen', this
       static Ξ (rez) :: 
         rez.registerClass('someOther.scope.Keen', this)
+      static ξ (rez) ::
+        rez.registerClass('alt.scope.Keen', this)
 
     revitalizeObjects @ Keen
 
@@ -35,6 +28,7 @@ module.exports = exports = function(tap, options={}) ::
     const some_proto = @{}
         soundOff() :: return @[] 'some proto', this
       , Ξ: 'some.proto.by.name'
+      , ξ(rez) :: rez.registerProto('some.proto.by.alt', this)
 
     revitalizeObjects @ some_proto
 
@@ -54,16 +48,17 @@ module.exports = exports = function(tap, options={}) ::
     t.equal @ 'string', typeof ans
 
     applyJSONEqual @ t, ans, @{}
-        Ξrefs: @[]
-            @{} Ξ: [ '{root}', 0 ]
-              , abc: { Ξ: 1 }
-              , def: { Ξ: 2 }
-              , value: 'the answer to life the universe and everything'
-              , p1: { Ξ: 3 }
-              , xyz: { Ξ: 2 }
-          , { Ξ: [ 'someOther.scope.Keen', 1 ], a: 1942, b: 2042, c: 2142 }
-          , { Ξ: [ 'example.scope.Neato', 2 ], d: 23, e: 'eeee', f: 'awesome' }
-          , { Ξ: [ 'some.proto.by.name', 3 ] }
+      ξrefs: @[]
+        @{} ξ: ['{root}', 0]
+          , abc: { ξ: 1 }
+          , def: { ξ: 2 }
+          , value: 'the answer to life the universe and everything'
+          , p1: { ξ: 3 }
+          , xyz: { ξ: 2 }
+        , { ξ: [ 'alt.scope.Keen', 1 ], a: 1942, b: 2042, c: 2142 }
+        , { ξ: [ 'alt.scope.Neato', 2 ], d: 23, e: 'eeee', f: 'awesome' }
+        , { ξ: [ 'some.proto.by.alt', 3 ] }
+
 
     const res = await revitalizeObjects.decode(ans)
     applyTest(res)
@@ -80,6 +75,4 @@ module.exports = exports = function(tap, options={}) ::
       t.deepEqual @ tip.def, {"d":23,"e":"eeee","f":"awesome"}
 
       t.strictEqual @ tip.def, tip.xyz
-      t.notStrictEqual @ tip.p0, tip.p1
-
 
