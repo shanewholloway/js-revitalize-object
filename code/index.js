@@ -120,20 +120,22 @@ class Revitalization extends Function ::
     const refs=new ObjMap()
     JSON.parse(aString, _json_restore)
 
-    const done = Promise.resolve()
-      .then @ () =>
-        Promise.all @ queue.reverse().map @ entry => ::
-          entry.done = done
-          const ans = entry.reviver.revive(entry.obj, entry, ctx)
-          if undefined !== ans && 0 === entry.oid ::
-            return entry.promise = Promise.resolve(ans)
-          return ans
+    const evts = {}
+    const _start = Promise.resolve().then @ () =>
+      queue.reverse().map @ entry => ::
+        entry.evts = evts
+        return entry.reviver.revive(entry.obj, entry, ctx)
 
-    return done.then @ () => ::
+    evts.started = _start.then @ lst => lst.length
+    evts.finished = _start.then @ lst =>
+      Promise.all(lst).then @ lst => lst.length
+
+    evts.done = evts.finished.then @ () => ::
       const {obj, promise} = byOid.get(0)
       return undefined === promise ? obj
         : promise.then @ ans =>
             ans !== undefined ? ans : obj
+    return evts.done
 
 
     function _json_create(key, value) ::
