@@ -1,6 +1,6 @@
 {
   "name": "revitalize-object",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Serialize and restore \"dead\" JSON objects back to instances with proper prototypes providing behavior",
   "license": "BSD-2-Clause",
   "author": "Shane Holloway <shane.holloway@ieee.org>",

@@ -96,16 +96,16 @@ class Revitalization extends Function ::
   registerClass(kind, klass) ::
     return this
       .registerReviver @: kind,
-        revive(obj, args) ::
-          obj = Object.assign(obj, args.body)
+        revive(obj, entry) ::
+          obj = Object.assign(obj, entry.body)
           return Object.setPrototypeOf(obj, klass.prototype)
       .match(klass, klass.prototype)
 
   registerProto(kind, proto) ::
     return this
       .registerReviver @: kind,
-        revive(obj, args) ::
-          obj = Object.assign(obj, args.body)
+        revive(obj, entry) ::
+          obj = Object.assign(obj, entry.body)
           return Object.setPrototypeOf(obj, proto)
       .match(proto)
 
@@ -122,11 +122,11 @@ class Revitalization extends Function ::
 
     const done = Promise.resolve()
       .then @ () =>
-        Promise.all @ queue.map @ args => ::
-          args.done = done
-          return args.reviver.revive(args.obj, args, ctx)
-      .then @ () => byOid.get(0).obj
-    return done
+        Promise.all @ queue.map @ entry => ::
+          entry.done = done
+          entry.reviver.revive(entry.obj, entry, ctx)
+
+    return done.then @ () => byOid.get(0).obj
 
 
     function _json_create(key, value) ::
