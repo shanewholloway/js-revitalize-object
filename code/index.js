@@ -111,6 +111,9 @@ class Revitalization extends Function ::
 
 
   decode(aString, ctx) ::
+    if null === aString ::
+      return null // JSON.parse(null) returns null; keep with convention
+
     if null == ctx :: ctx = {}
     const token=this.token, lookupReviver=this.lookupReviver
 
@@ -131,7 +134,10 @@ class Revitalization extends Function ::
       Promise.all(lst).then @ lst => lst.length
 
     evts.done = evts.finished.then @ () => ::
-      const {obj, promise} = byOid.get(0)
+      const root = byOid.get(0)
+      if null == root :: return
+
+      const {obj, promise} = root
       return undefined === promise ? obj
         : promise.then @ ans =>
             ans !== undefined ? ans : obj

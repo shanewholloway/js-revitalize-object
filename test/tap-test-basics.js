@@ -4,6 +4,26 @@ const {applyJSONEqual} = require('./_utils')
 
 module.exports = exports = function(tap, options={}) ::
 
+  tap.test @ 'Empty edge cases', async t => ::
+    const revitalize = testModule
+    t.equal @ null,
+      revitalize.decode(null)
+
+    t.throws @ () =>
+      revitalize.decode(undefined)
+    t.throws @ () =>
+      revitalize.decode('')
+
+    t.throws @ () =>
+      revitalize.decode('[')
+    t.throws @ () =>
+      revitalize.decode(']')
+    t.throws @ () =>
+      revitalize.decode('{')
+    t.throws @ () =>
+      revitalize.decode('}')
+    
+
   tap.test @ 'Revive without registered function throws exception', async t => ::
     const revitalizeObjects = testModule.createRegistry()
     t.throws @ () => ::
