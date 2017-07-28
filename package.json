@@ -1,6 +1,6 @@
 {
   "name": "revitalize-object",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Serialize and restore \"dead\" JSON objects back to instances with proper prototypes providing behavior",
   "license": "BSD-2-Clause",
   "author": "Shane Holloway <shane.holloway@ieee.org>",
@@ -46,8 +46,8 @@
   "scripts": {
     "start": "node dist",
     "build": "npm -s run build:code && npm -s run build:min",
-    "build:code": "babel -s inline -x .js,.jsy code -d dist",
-    "build:min": "babili --no-babelrc -s true dist/index.js -o dist/index.min.js",
+    "build:code": "babel -s inline code/encode.js code/decode.js code/index.js -o dist/index.js",
+    "build:min": "babili -M --no-babelrc -s true dist/index.js -o dist/index.min.js",
     "watch": "npm -s run build:code -- --watch",
     "prepublish": "npm -s run test",
     "pretest": "npm -s run build:code",

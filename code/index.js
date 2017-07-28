@@ -1,5 +1,8 @@
-const root_obj = {}, root_list = []
-const ObjMap = 'undefined' !== typeof WeakMap ? WeakMap : Map
+/* The following inlined by package.json build script:
+
+const {decodeObjectTree, ObjMap} = require('./decode')
+const {encodeObjectTree, root_obj, root_list} = require('./encode')
+*/
 
 class Revitalization extends Function ::
   constructor() ::
@@ -110,155 +113,21 @@ class Revitalization extends Function ::
       .match(proto)
 
 
-  decode(aString, ctx) ::
-    if null === aString ::
+  decode(json_source, ctx) ::
+    if null === json_source ::
       return null // JSON.parse(null) returns null; keep with convention
 
-    if null == ctx :: ctx = {}
-    const token=this.token, lookupReviver=this.lookupReviver
-
-    const queue=[], byOid=new Map()
-    JSON.parse(aString, _json_create)
-
-    const refs=new ObjMap()
-    JSON.parse(aString, _json_restore)
-
-    const evts = {}
-    const _start = Promise.resolve().then @ () =>
-      queue.reverse().map @ entry => ::
-        entry.evts = evts
-        return entry.reviver.revive(entry.obj, entry, ctx)
-
-    evts.started = _start.then @ lst => lst.length
-    evts.finished = _start.then @ lst =>
-      Promise.all(lst).then @ lst => lst.length
-
-    evts.done = evts.finished.then @ () => ::
-      const root = byOid.get(0)
-      if null == root :: return
-
-      const {obj, promise} = root
-      return undefined === promise ? obj
-        : promise.then @ ans =>
-            ans !== undefined ? ans : obj
+    const evts = decodeObjectTree @ this, json_source, ctx
     return evts.done
-
-
-    function _json_create(key, value) ::
-      if token === key ::
-        if 'number' === typeof value ::
-        else if Array.isArray(value) ::
-          delete this[token]
-
-          const [kind, oid] = value
-          const reviver = lookupReviver(kind)
-          if undefined === reviver ::
-            throw new ReviverNotFound(`Missing registered reviver for kind "${kind}"`)
-
-          const entry = @: kind, oid, reviver, body: this
-
-          entry.obj = reviver.init
-            ? reviver.init(entry, ctx)
-            : Object.create(null)
-
-          byOid.set(oid, entry)
-          queue.push(entry)
-        return
-
-      return value
-
-
-    function _json_restore(key, value) ::
-      if token === key ::
-        if 'number' === typeof value ::
-          refs.set @ this, byOid.get(value).obj
-
-        else if Array.isArray(value) ::
-          const entry = byOid.get(value[1])
-          entry.body = this
-          refs.set @ this, entry.obj
-        return
-
-      else if null === value || 'object' !== typeof value ::
-        return value
-
-      const ans = refs.get(value)
-      return ans !== undefined ? ans : value
-
 
   encode(anObject, ctx) ::
     const refs = []
-    const promise = this.encodeObjects @ anObject, ctx, (err, entry) => ::
+    const promise = encodeObjectTree @ this, anObject, ctx, (err, entry) => ::
       refs[entry.oid] = entry.content
 
     const key = JSON.stringify @ `${this.token}refs`
     return promise.then @ () =>
       `{${key}: [\n  ${refs.join(',\n  ')} ]}\n`
-
-
-  encodeObjects(anObject, ctx, callback) ::
-    if 'function' === typeof ctx ::
-      callback = ctx; ctx = {}
-    else if null == ctx ::
-      ctx = {}
-
-    const token=this.token, lookupPreserver=this.lookupPreserver, findPreserver=this._boundFindPreserveForObj()
-
-    const queue=[], lookup=new Map()
-    JSON.stringify(anObject, _json_replacer)
-
-    return _encodeQueue()
-
-    function _encodeQueue() ::
-      if 0 === queue.length ::
-        return Promise.resolve()
-
-      const promises = []
-      while 0 !== queue.length ::
-        const tip = queue.shift(), oid = tip.oid
-        promises.push @
-          tip
-            .then @ body => ::
-              const content = JSON.stringify(body, _json_replacer)
-              return callback @ null, { oid, body, content }
-            .catch @ err => callback(err)
-
-      return Promise.all(promises).then(_encodeQueue)
-
-    function _json_replacer(key, dstValue) ::
-      // srcValue !== dstValue for objects with .toJSON() methods
-      const srcValue = this[key]
-
-      if dstValue === null || 'object' !== typeof srcValue ::
-        return dstValue
-
-      const prev = lookup.get(srcValue)
-      if undefined !== prev ::
-        return prev // already serialized -- reference existing item
-
-      let entry = findPreserver(srcValue)
-      if undefined === entry ::
-        // not a "special" preserved item
-        if anObject !== srcValue ::
-          return dstValue // so serialize normally
-        // but it is the root, so store at oid 0
-        entry = lookupPreserver @
-          Array.isArray(dstValue) ? root_list : root_obj
-
-      // register id for object and return a JSON serializable version
-      const oid = lookup.size
-      const ref = {[token]: oid}
-      lookup.set(srcValue, ref)
-
-      // transform live object into preserved form
-      const body = {[token]: [entry.kind, oid]}
-      const promise = Promise
-        .resolve @ entry.preserve ? entry.preserve(dstValue, srcValue, ctx) : dstValue
-        .then @ attrs => Object.assign(body, attrs)
-
-      promise.oid = oid
-      queue.push @ promise
-      return ref
 
   _boundFindPreserveForObj() ::
     const lookupPreserver = this.lookupPreserver
