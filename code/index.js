@@ -27,16 +27,16 @@ class Revitalization extends Function ::
     function register() ::
       return self.register.apply(self, arguments)
 
-    function _setReviver(entry, kinds, matchers) ::
-      lutRevive.set(entry.kind, entry)
+    function _setReviver(reviver, kinds, matchers) ::
+      lutRevive.set(reviver.kind, reviver)
       return ::
           alias(...kinds) ::
             for const each of kinds ::
-              if each :: lutRevive.set(each, entry)
+              if each :: lutRevive.set(each, reviver)
             return this
         , match(...matchers) ::
             for const each of matchers ::
-              if null != each :: lutPreserve.set(each, entry)
+              if null != each :: lutPreserve.set(each, reviver)
             return this
 
 
@@ -79,22 +79,22 @@ class Revitalization extends Function ::
 
     throw new TypeError(`Unrecognized revitalization registration`)
 
-  registerReviver(entry) ::
+  registerReviver(reviver) ::
     ::
-      const kind = entry.kind
+      const kind = reviver.kind
       if 'string' !== typeof kind && true !== kind && false !== kind && null !== kind ::
         throw new TypeError @ `"kind" must be a string`
 
-      if entry.init && 'function' !== typeof entry.init ::
+      if reviver.init && 'function' !== typeof reviver.init ::
         throw new TypeError @ '"init" must be a function'
 
-      if 'function' !== typeof entry.revive ::
+      if 'function' !== typeof reviver.revive ::
         throw new TypeError @ '"revive" must be a function'
 
-      if entry.preserve && 'function' !== typeof entry.preserve ::
+      if reviver.preserve && 'function' !== typeof reviver.preserve ::
         throw new TypeError @ '"preserve" must be a function if provided'
 
-    return this._setReviver(entry)
+    return this._setReviver(reviver)
 
   registerClass(kind, klass) ::
     return this
@@ -132,19 +132,19 @@ class Revitalization extends Function ::
   _boundFindPreserveForObj() ::
     const lookupPreserver = this.lookupPreserver
     return function(obj) ::
-      let entry = lookupPreserver(obj)
-      if undefined !== entry ::
-        return entry
+      let preserver = lookupPreserver(obj)
+      if undefined !== preserver ::
+        return preserver
 
-      entry = lookupPreserver(obj.constructor)
-      if undefined !== entry ::
-        return entry
+      preserver = lookupPreserver(obj.constructor)
+      if undefined !== preserver ::
+        return preserver
 
       let proto = obj
       while null !== @ proto = Object.getPrototypeOf(proto) ::
-        let entry = lookupPreserver(proto)
-        if undefined !== entry ::
-          return entry
+        let preserver = lookupPreserver(proto)
+        if undefined !== preserver ::
+          return preserver
 
 
 class ReviverNotFound extends Error ::

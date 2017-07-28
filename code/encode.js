@@ -43,13 +43,13 @@ function encodeObjectTree(reviver, anObject, ctx, cb_addObject) ::
     if undefined !== prev ::
       return prev // already serialized -- reference existing item
 
-    let entry = findPreserver(srcValue)
-    if undefined === entry ::
+    let preserver = findPreserver(srcValue)
+    if undefined === preserver ::
       // not a "special" preserved item
       if anObject !== srcValue ::
         return dstValue // so serialize normally
       // but it is the root, so store at oid 0
-      entry = lookupPreserver @
+      preserver = lookupPreserver @
         Array.isArray(dstValue) ? root_list : root_obj
 
     // register id for object and return a JSON serializable version
@@ -58,9 +58,12 @@ function encodeObjectTree(reviver, anObject, ctx, cb_addObject) ::
     lookup.set(srcValue, ref)
 
     // transform live object into preserved form
-    const body = {[token]: [entry.kind, oid]}
+    const body = {[token]: [preserver.kind, oid]}
     const promise = Promise
-      .resolve @ entry.preserve ? entry.preserve(dstValue, srcValue, ctx) : dstValue
+      .resolve @
+        preserver.preserve
+          ? preserver.preserve(dstValue, srcValue, ctx)
+          : dstValue
       .then @ attrs => Object.assign(body, attrs)
 
     promise.oid = oid
