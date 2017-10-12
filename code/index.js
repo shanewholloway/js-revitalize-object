@@ -15,10 +15,10 @@ class Revitalization extends Function ::
     const lutPreserve=new ObjMap()
 
     const self = Object.setPrototypeOf(register, this.prototype)
-    Object.defineProperties @ self,
-      @{} lookupReviver: @{} value: lutRevive.get.bind(lutRevive)
-        , lookupPreserver: @{} value: lutPreserve.get.bind(lutPreserve)
-        , _setReviver: @{} value: _setReviver
+    Object.defineProperties @ self, @{}
+          lookupReviver: @{} value: lutRevive.get.bind(lutRevive)
+          lookupPreserver: @{} value: lutPreserve.get.bind(lutPreserve)
+          _setReviver: @{} value: _setReviver
 
 
     self.initRegistery(root_obj, root_list)
@@ -29,12 +29,12 @@ class Revitalization extends Function ::
 
     function _setReviver(reviver, kinds, matchers) ::
       lutRevive.set(reviver.kind, reviver)
-      return ::
+      return @:
           alias(...kinds) ::
             for const each of kinds ::
               if each :: lutRevive.set(each, reviver)
             return this
-        , match(...matchers) ::
+          match(...matchers) ::
             for const each of matchers ::
               if null != each :: lutPreserve.set(each, reviver)
             return this
@@ -43,14 +43,14 @@ class Revitalization extends Function ::
   initRegistery(root_obj, root_list) ::
     this
       .register @: kind: '{root}'
-        , revive(obj, entry) :: Object.assign(obj, entry.body)
+          revive(obj, entry) :: Object.assign(obj, entry.body)
       .match @ root_obj
 
     this
       .register @: kind: '[root]'
-        , preserve(rootList) :: return @{} _: rootList.slice()
-        , init(entry) :: return []
-        , revive(rootList, entry) ::
+          preserve(rootList) :: return @{} _: rootList.slice()
+          init(entry) :: return []
+          revive(rootList, entry) ::
             rootList.push.apply(rootList, entry.body._)
       .match @ root_list
 
@@ -152,6 +152,6 @@ class ReviverNotFound extends Error ::
 const createRegistry = Revitalization.create.bind(Revitalization)
 
 module.exports = exports = createRegistry()
-Object.assign @ exports
-  , @{} Revitalization, ReviverNotFound
-      , createRegistry, create: createRegistry
+Object.assign @ exports, @{}
+  Revitalization, ReviverNotFound
+  createRegistry, create: createRegistry

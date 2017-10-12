@@ -28,7 +28,7 @@ function encodeObjectTree(reviver, anObject, ctx, cb_addObject) ::
                   return cb_addObject(err)
                 return cb_addObject @ null, { oid, body, content }
 
-            , err => cb_addObject(err)
+              err => cb_addObject(err)
 
     return Promise.all(promises).then(_encodeQueue)
 
