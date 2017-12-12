@@ -114,8 +114,7 @@ export class Revitalization extends Function ::
     if null === json_source ::
       return null // JSON.parse(null) returns null; keep with convention
 
-    const evts = decodeObjectTree @ this, json_source, ctx
-    return evts.done
+    return decodeObjectTree @ this, json_source, ctx
 
   encodeToRefs(anObject, ctx, refs) ::
     if null == refs :: refs = []
