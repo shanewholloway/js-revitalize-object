@@ -1,6 +1,6 @@
-const ObjMap = 'undefined' !== typeof WeakMap ? WeakMap : Map
+export const ObjMap = 'undefined' !== typeof WeakMap ? WeakMap : Map
 
-function decodeObjectTree(reviver, json_source, ctx) ::
+export function decodeObjectTree(reviver, json_source, ctx) ::
   if null === json_source ::
     return null // JSON.parse(null) returns null; keep with convention
 

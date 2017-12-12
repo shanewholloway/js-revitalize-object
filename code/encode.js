@@ -1,7 +1,7 @@
-const root_obj = {}
-const root_list = []
+export const root_obj = Object.freeze @ {}
+export const root_list = Object.freeze @ []
 
-function encodeObjectTree(reviver, anObject, ctx, cb_addObject) ::
+export function encodeObjectTree(reviver, anObject, ctx, cb_addObject) ::
   const token=reviver.token
   const lookupPreserver=reviver.lookupPreserver
   const findPreserver=reviver._boundFindPreserveForObj()
