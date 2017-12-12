@@ -4,7 +4,7 @@ const {applyJSONEqual} = require('./_utils')
 
 module.exports = exports = function(tap, options={}) ::
 
-  tap.test @ 'Object with toJSON ', async t => ::
+  tap.test @ 'Object with toJSON ', t => ::
     const revitalize = testModule.createRegistry()
     let callCount = 0
 
@@ -32,14 +32,14 @@ module.exports = exports = function(tap, options={}) ::
       const obj = new SomeExampleObject('first')
       t.equal @ 'first', obj.combine()
 
-      const sz_ans = await revitalize.encode(obj)
+      const sz_ans = revitalize.encode(obj)
       t.equal @ 1, callCount
 
       applyJSONEqual @ t, sz_ans, @{} 'Ξrefs': @[]
         @{} 'Ξ': [ 'example.scope.something', 0 ]
           , prefix: 'first', aa: 'AAaa', bb: 'bbBB'
 
-      const reanim = await revitalize.decode(sz_ans)
+      const reanim = revitalize.decode(sz_ans)
       t.equal @ 'first AAaa bbBB', reanim.combine()
       t.equal @ 1, callCount
 
@@ -48,7 +48,7 @@ module.exports = exports = function(tap, options={}) ::
       const part2 = new SomeExampleObject('part-2')
       const part3 = new SomeExampleObject('part-3')
 
-      const sz_ans = await revitalize.encode([part1, part2, part3])
+      const sz_ans = revitalize.encode([part1, part2, part3])
       t.equal @ 4, callCount
 
       applyJSONEqual @ t, sz_ans, @{} 'Ξrefs': @[]
@@ -61,7 +61,7 @@ module.exports = exports = function(tap, options={}) ::
         , @{} 'Ξ': [ 'example.scope.something', 3 ]
             , prefix: 'part-3', aa: 'AAaa', bb: 'bbBB'
 
-      const reanim = await revitalize.decode(sz_ans)
+      const reanim = revitalize.decode(sz_ans)
       t.equal @ 'part-1 AAaa bbBB', reanim[0].combine()
       t.equal @ 'part-2 AAaa bbBB', reanim[1].combine()
       t.equal @ 'part-3 AAaa bbBB', reanim[2].combine()

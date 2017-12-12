@@ -4,7 +4,7 @@ const {applyJSONEqual} = require('./_utils')
 
 module.exports = exports = function(tap, options={}) ::
 
-  tap.test @ 'Empty edge cases', async t => ::
+  tap.test @ 'Empty edge cases', t => ::
     const revitalize = testModule.default
     t.equal @ null,
       revitalize.decode(null)
@@ -24,7 +24,7 @@ module.exports = exports = function(tap, options={}) ::
       revitalize.decode('}')
     
 
-  tap.test @ 'Revive without registered function throws exception', async t => ::
+  tap.test @ 'Revive without registered function throws exception', t => ::
     const revitalizeObjects = testModule.createRegistry()
     t.throws @ () => ::
       revitalizeObjects.decode @
@@ -33,16 +33,16 @@ module.exports = exports = function(tap, options={}) ::
               @{} Ξ: ['this-reviver-not-registered', 99], a: 1942
 
 
-  tap.test @ 'Date with toJSON', async t => ::
+  tap.test @ 'Date with toJSON', t => ::
     const revitalizeObjects = testModule.default
 
     const ts = new Date('2017-01-01')
     const src = @{} ts
 
-    const sz = await revitalizeObjects.encode(src)
+    const sz = revitalizeObjects.encode(src)
     t.equal(typeof sz, 'string')
 
-    const ans = await revitalizeObjects.decode(sz)
+    const ans = revitalizeObjects.decode(sz)
     t.equal @ ans.ts, ts.toISOString()
 
     applyJSONEqual @ t, sz, @{} 'Ξrefs': @[]
@@ -50,7 +50,7 @@ module.exports = exports = function(tap, options={}) ::
         , ts: '2017-01-01T00:00:00.000Z'
 
 
-  tap.test @ 'Object behavior test ', async t => ::
+  tap.test @ 'Object behavior test ', t => ::
     const revitalizeObjects = testModule.createRegistry()
 
     class Neato ::
@@ -86,7 +86,7 @@ module.exports = exports = function(tap, options={}) ::
 
     applyTest(root)
 
-    const ans = await revitalizeObjects.encode(root, '  ')
+    const ans = revitalizeObjects.encode(root, '  ')
 
     t.equal @ 'string', typeof ans
 
@@ -102,7 +102,7 @@ module.exports = exports = function(tap, options={}) ::
           , { Ξ: [ 'example.scope.Neato', 2 ], d: 23, e: 'eeee', f: 'awesome' }
           , { Ξ: [ 'some.proto.by.name', 3 ] }
 
-    const res = await revitalizeObjects.decode(ans)
+    const res = revitalizeObjects.decode(ans)
     applyTest(res)
 
 

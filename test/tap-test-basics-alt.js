@@ -3,7 +3,7 @@ const testModule = require('../dist')
 const {applyJSONEqual} = require('./_utils')
 
 module.exports = exports = function(tap, options={}) ::
-  tap.test @ 'Alternate revitalize key test ', async t => ::
+  tap.test @ 'Alternate revitalize key test ', t => ::
     const revitalizeObjects = testModule.createRegistry('ξ')
 
     class Neato ::
@@ -43,7 +43,7 @@ module.exports = exports = function(tap, options={}) ::
 
     applyTest(root)
 
-    const ans = await revitalizeObjects.encode(root, '  ')
+    const ans = revitalizeObjects.encode(root, '  ')
 
     t.equal @ 'string', typeof ans
 
@@ -60,7 +60,7 @@ module.exports = exports = function(tap, options={}) ::
         , { ξ: [ 'some.proto.by.alt', 3 ] }
 
 
-    const res = await revitalizeObjects.decode(ans)
+    const res = revitalizeObjects.decode(ans)
     applyTest(res)
 
 
