@@ -8,26 +8,18 @@ export function encodeObjectTree(revitalizer, anObject, ctx, cb_addObject) ::
 
   const queue=[], lookup=new Map(), v=[]
   v[0] = JSON.stringify(anObject, _json_replacer)
-  return _encodeQueue()
 
-  function _encodeQueue() ::
-    if 0 === queue.length ::
-      return Promise.resolve()
+  while 0 !== queue.length ::
+    const save = queue.shift(), {oid} = save
+    let body, content
+    try ::
+      body = save(ctx)
+      content = JSON.stringify(body, _json_replacer)
+    catch err ::
+      cb_addObject @ err, { oid, body }
+      continue
+    cb_addObject @ null, { oid, body, content }
 
-    const promises = []
-    while 0 !== queue.length ::
-      const tip = queue.shift(), oid = tip.oid
-      promises.push @ tip.then @
-        body => ::
-          try ::
-            var content = JSON.stringify(body, _json_replacer)
-          catch err ::
-            return cb_addObject(err)
-          return cb_addObject @ null, { oid, body, content }
-
-        err => cb_addObject(err)
-
-    return Promise.all(promises).then(_encodeQueue)
 
   function _json_replacer(key, dstValue) ::
     // srcValue !== dstValue for objects with .toJSON() methods
@@ -55,15 +47,14 @@ export function encodeObjectTree(revitalizer, anObject, ctx, cb_addObject) ::
     lookup.set(srcValue, ref)
 
     // transform live object into preserved form
-    const body = {[token]: [preserver.kind, oid]}
-    const promise = Promise
-      .resolve @
-        preserver.preserve
-          ? preserver.preserve(dstValue, srcValue, ctx)
-          : dstValue
-      .then @ attrs => Object.assign(body, attrs)
+    const save = ctx => ::
+      const body = {[token]: [preserver.kind, oid]}
+      if preserver.preserve ::
+        const attrs = preserver.preserve(dstValue, srcValue, ctx)
+        return Object.assign(body, attrs)
+      else return Object.assign(body, dstValue)
 
-    promise.oid = oid
-    queue.push @ promise
+    save.oid = oid
+    queue.push @ save
     return ref
 
