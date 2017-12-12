@@ -4,7 +4,7 @@ const testModule = require('../dist')
 module.exports = exports = function(tap, options={}) ::
 
   tap.test @ 'Module function smoke test', async t => ::
-    const revitalizeObjects = testModule
+    const revitalizeObjects = testModule.default
     const src = @{}
       a: 1942, b: {c: 'value', d: [1, 1, 2, 3, 5, 8, 13]}, e: null
 

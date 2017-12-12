@@ -1,14 +1,13 @@
 export const root_obj = Object.freeze @ {}
 export const root_list = Object.freeze @ []
 
-export function encodeObjectTree(reviver, anObject, ctx, cb_addObject) ::
-  const token=reviver.token
-  const lookupPreserver=reviver.lookupPreserver
-  const findPreserver=reviver._boundFindPreserveForObj()
+export function encodeObjectTree(revitalizer, anObject, ctx, cb_addObject) ::
+  const token=revitalizer.token
+  const lookupPreserver=revitalizer.lookupPreserver
+  const findPreserver=revitalizer._boundFindPreserveForObj()
 
-  const queue=[], lookup=new Map()
-  JSON.stringify(anObject, _json_replacer)
-
+  const queue=[], lookup=new Map(), v=[]
+  v[0] = JSON.stringify(anObject, _json_replacer)
   return _encodeQueue()
 
   function _encodeQueue() ::
@@ -18,17 +17,15 @@ export function encodeObjectTree(reviver, anObject, ctx, cb_addObject) ::
     const promises = []
     while 0 !== queue.length ::
       const tip = queue.shift(), oid = tip.oid
-      promises.push @
-        tip
-          .then @
-              body => ::
-                try ::
-                  var content = JSON.stringify(body, _json_replacer)
-                catch err ::
-                  return cb_addObject(err)
-                return cb_addObject @ null, { oid, body, content }
+      promises.push @ tip.then @
+        body => ::
+          try ::
+            var content = JSON.stringify(body, _json_replacer)
+          catch err ::
+            return cb_addObject(err)
+          return cb_addObject @ null, { oid, body, content }
 
-              err => cb_addObject(err)
+        err => cb_addObject(err)
 
     return Promise.all(promises).then(_encodeQueue)
 

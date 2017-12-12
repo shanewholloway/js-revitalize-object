@@ -1,17 +1,17 @@
 export const ObjMap = 'undefined' !== typeof WeakMap ? WeakMap : Map
 
-export function decodeObjectTree(reviver, json_source, ctx) ::
+export function decodeObjectTree(revitalizer, json_source, ctx) ::
   if null === json_source ::
     return null // JSON.parse(null) returns null; keep with convention
 
-  const token=reviver.token
-  const lookupReviver=reviver.lookupReviver
+  const token=revitalizer.token
+  const lookupReviver=revitalizer.lookupReviver
 
-  const queue=[], byOid=new Map()
-  JSON.parse(json_source, _json_create)
+  const queue=[], byOid=new Map(), v=[]
+  v[0] = JSON.parse(json_source, _json_create)
 
   const refs=new ObjMap()
-  JSON.parse(json_source, _json_restore)
+  v[1] = JSON.parse(json_source, _json_restore)
 
   const evts = {}
   const _start = Promise.resolve().then @ () =>

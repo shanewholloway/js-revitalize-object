@@ -117,14 +117,18 @@ export class Revitalization extends Function ::
     const evts = decodeObjectTree @ this, json_source, ctx
     return evts.done
 
-  encode(anObject, ctx) ::
-    const refs = []
+  encodeToRefs(anObject, ctx, refs) ::
+    if null == refs :: refs = []
     const promise = encodeObjectTree @ this, anObject, ctx, (err, entry) => ::
       refs[entry.oid] = entry.content
+    return promise.then @ () => refs
 
-    const key = JSON.stringify @ `${this.token}refs`
-    return promise.then @ () =>
-      `{${key}: [\n  ${refs.join(',\n  ')} ]}\n`
+  encode(anObject, ctx, pretty) ::
+    return this.encodeToRefs(anObject, ctx).then @ refs => ::
+      const key = JSON.stringify @ `${this.token}refs`
+      return pretty
+        ? `{${key}: [\n  ${refs.join(',\n  ')} ]}\n`
+        : `{${key}:[${refs.join(',')}]}`
 
   _boundFindPreserveForObj() ::
     const lookupPreserver = this.lookupPreserver

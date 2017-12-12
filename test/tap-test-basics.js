@@ -5,7 +5,7 @@ const {applyJSONEqual} = require('./_utils')
 module.exports = exports = function(tap, options={}) ::
 
   tap.test @ 'Empty edge cases', async t => ::
-    const revitalize = testModule
+    const revitalize = testModule.default
     t.equal @ null,
       revitalize.decode(null)
 
@@ -34,7 +34,7 @@ module.exports = exports = function(tap, options={}) ::
 
 
   tap.test @ 'Date with toJSON', async t => ::
-    const revitalizeObjects = testModule
+    const revitalizeObjects = testModule.default
 
     const ts = new Date('2017-01-01')
     const src = @{} ts
