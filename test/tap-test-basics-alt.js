@@ -1,5 +1,5 @@
 require('source-map-support').install()
-const testModule = require('../dist')
+const testModule = require('..')
 const {applyJSONEqual} = require('./_utils')
 
 module.exports = exports = function(tap, options={}) ::

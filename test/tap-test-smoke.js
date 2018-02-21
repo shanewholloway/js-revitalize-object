@@ -1,5 +1,5 @@
 require('source-map-support').install()
-const testModule = require('../dist')
+const testModule = require('..')
 
 module.exports = exports = function(tap, options={}) ::
 

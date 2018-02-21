@@ -1,4 +1,8 @@
 /dist/
+/cjs/
+/esm/
+/umd/
+
 # Logs
 logs
 *.log

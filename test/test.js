@@ -1,6 +1,6 @@
 require('source-map-support').install()
 
-const testModule = require('../dist')
+const testModule = require('..')
 
 const tap = require('tap-lite-tester')
 tap.start()
